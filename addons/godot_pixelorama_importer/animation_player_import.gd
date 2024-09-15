@@ -122,7 +122,7 @@ func _import(
 	var animation_player := AnimationPlayer.new()
 	sprite.add_child(animation_player)
 	animation_player.name = "AnimationPlayer"
-	animation_player.owner = sprite  # for PackedScene
+	animation_player.owner = sprite # for PackedScene
 
 	# add some default animations
 	if project.tags.size() == 0:
@@ -188,7 +188,7 @@ func _import(
 		# update/set the length
 		animation.length = time
 
-	var err: int  # Error enum
+	var err: int # Error enum
 	if options.external_save:
 		err = ResourceSaver.save(animation_library, animation_library_path)
 		if err != OK:
@@ -210,3 +210,8 @@ func _import(
 	gen_files.push_back(packed_scene_path)
 
 	return OK
+
+func ensure_directory_exists(file_path: String) -> void:
+	var directory = DirAccess.open(file_path.get_base_dir())
+	if directory == null:
+		var err = DirAccess.make_dir_recursive_absolute(file_path.get_base_dir())
