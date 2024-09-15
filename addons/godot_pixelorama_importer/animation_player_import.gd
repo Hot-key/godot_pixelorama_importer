@@ -6,7 +6,7 @@ const VISIBLE_NAME := "Sprite2D & AnimationPlayer"
 var editor: EditorInterface
 
 
-func _init(editor_interface):
+func _init(editor_interface: EditorInterface):
 	editor = editor_interface
 
 
@@ -90,8 +90,9 @@ func _import(
 	"""
 	Main import function. Reads the Pixelorama project and creates the animation player resource
 	"""
-
-	var spritesheet_path = "%s.spritesheet" % [save_path]
+	var new_save_path = save_path.replace(".godot/imported", ".gen/pixelorama")
+	ensure_directory_exists(new_save_path)
+	var spritesheet_path = "%s.spritesheet" % [new_save_path]
 
 	# Open the project
 	var load_res = preload("./util/read_pxo_file.gd").read_pxo_file(source_file, spritesheet_path)

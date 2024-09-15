@@ -2,17 +2,96 @@ extends Node
 
 const Result = preload("./Result.gd")
 
-
 static func read_pxo_file(source_file: String, image_save_path: String):
-	var result = Result.new()
-
-	# Open the Pixelorama project file as a ZIP
 	var zip_reader := ZIPReader.new()
 	var err := zip_reader.open(source_file)
 	if err != OK:
-		printerr("Failed to open file as ZIP. Error code: ", err)
-		result.error = err
+		return _read_pxo_file_v1(source_file, image_save_path)
+	else:
+		return _read_pxo_file_v2(zip_reader, source_file, image_save_path)
+
+	
+static func _read_pxo_file_v1(source_file: String, image_save_path: String):
+	var result = Result.new()
+
+	# Open the Pixelorama project file
+	var file = FileAccess.open_compressed(source_file, FileAccess.READ, FileAccess.COMPRESSION_ZSTD)
+	if FileAccess.get_open_error() != OK:
+		file = FileAccess.open(source_file, FileAccess.READ)
+
+	# Parse it as JSON
+	var text = file.get_line()
+	var test_json_conv = JSON.new()
+	var json_error = test_json_conv.parse(text)
+
+	if json_error != OK:
+		printerr("JSON Parse Error")
+		result.error = json_error
 		return result
+
+	var project = test_json_conv.get_data()
+
+	# Make sure it's a JSON Object
+	if typeof(project) != TYPE_DICTIONARY:
+		printerr("Invalid Pixelorama project file")
+		result.error = ERR_FILE_UNRECOGNIZED
+		return result
+
+	# Load the cel dimensions and frame count
+	var size = Vector2(project.size_x, project.size_y)
+	var frame_count = project.frames.size()
+
+	# Prepare the spritesheet image
+	var spritesheet = Image.create(size.x * frame_count, size.y, false, Image.FORMAT_RGBA8)
+
+	var cel_data_size: int = size.x * size.y * 4
+
+	for i in range(frame_count):
+		var frame = project.frames[i]
+
+		# Prepare the frame image
+		var frame_img: Image = null
+		var layer := 0
+		for cel in frame.cels:
+			var opacity: float = cel.opacity
+
+			if project.layers[layer].visible and opacity > 0.0:
+				# Load the cel image
+				var cel_img = Image.create_from_data(
+					size.x, size.y, false, Image.FORMAT_RGBA8, file.get_buffer(cel_data_size)
+				)
+
+				if opacity < 1.0:
+					for x in range(size.x):
+						for y in range(size.y):
+							var color := cel_img.get_pixel(x, y)
+							color.a *= opacity
+							cel_img.set_pixel(x, y, color)
+
+				if frame_img == null:
+					frame_img = cel_img
+				else:
+					# Overlay each Cel on top of each other
+					frame_img.blend_rect(cel_img, Rect2(Vector2.ZERO, size), Vector2.ZERO)
+			else:
+				# Skip this cel's data
+				file.seek(file.get_position() + cel_data_size)
+
+			layer += 1
+
+		if frame_img != null:
+			# Add to the spritesheet
+			spritesheet.blit_rect(frame_img, Rect2(Vector2.ZERO, size), Vector2(size.x * i, 0))
+
+	save_ctex(spritesheet, image_save_path)
+	result.value = project
+	result.error = OK
+
+	return result
+
+
+static func _read_pxo_file_v2(zip_reader: ZIPReader, source_file: String, image_save_path: String):
+	var result = Result.new()
 
 	# Read and parse the data.json file
 	var data_json := zip_reader.read_file("data.json")
