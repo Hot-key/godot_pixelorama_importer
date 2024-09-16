@@ -64,10 +64,10 @@ func _import(
 	"""
 	Main import function. Reads the Pixelorama project and creates the SpriteFrames resource
 	"""
-	var new_save_path = save_path.replace(".godot/imported", ".gen/pixelorama")
+	var new_save_path = save_path.replace(".godot/imported", ".godot/pixelorama")
 	ensure_directory_exists(new_save_path)
 	var spritesheet_path = "%s.spritesheet" % [new_save_path]
-	
+
 	# Open the project
 	var load_res = preload("./util/read_pxo_file.gd").read_pxo_file(source_file, spritesheet_path)
 
@@ -104,7 +104,7 @@ func _import(
 			var image_rect := Rect2i(Vector2((frame - 1) * frame_size.x, 0), frame_size)
 			var image := Image.new()
 			image = spritesheet_tex.get_image().get_region(image_rect)
-			var image_texture := ImageTexture.create_from_image(image) # ,0
+			var image_texture := ImageTexture.create_from_image(image)  # ,0
 			frames.add_frame(tag.name, image_texture)
 
 	var err = ResourceSaver.save(frames, "%s.%s" % [save_path, _get_save_extension()])
@@ -114,6 +114,7 @@ func _import(
 		return err
 
 	return OK
+
 
 func ensure_directory_exists(file_path: String) -> void:
 	var directory = DirAccess.open(file_path.get_base_dir())

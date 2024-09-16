@@ -90,7 +90,7 @@ func _import(
 	"""
 	Main import function. Reads the Pixelorama project and creates the animation player resource
 	"""
-	var new_save_path = save_path.replace(".godot/imported", ".gen/pixelorama")
+	var new_save_path = save_path.replace(".godot/imported", ".godot/pixelorama")
 	ensure_directory_exists(new_save_path)
 	var spritesheet_path = "%s.spritesheet" % [new_save_path]
 
@@ -123,7 +123,7 @@ func _import(
 	var animation_player := AnimationPlayer.new()
 	sprite.add_child(animation_player)
 	animation_player.name = "AnimationPlayer"
-	animation_player.owner = sprite # for PackedScene
+	animation_player.owner = sprite  # for PackedScene
 
 	# add some default animations
 	if project.tags.size() == 0:
@@ -189,7 +189,7 @@ func _import(
 		# update/set the length
 		animation.length = time
 
-	var err: int # Error enum
+	var err: int  # Error enum
 	if options.external_save:
 		err = ResourceSaver.save(animation_library, animation_library_path)
 		if err != OK:
@@ -211,6 +211,7 @@ func _import(
 	gen_files.push_back(packed_scene_path)
 
 	return OK
+
 
 func ensure_directory_exists(file_path: String) -> void:
 	var directory = DirAccess.open(file_path.get_base_dir())
